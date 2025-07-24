@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ChatBot Desa Pongpongan</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    body {
+      background-color: #f2f2f2;
+      padding: 20px;
+      animation: fadeIn 1s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 15px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      overflow: hidden;
+      animation: slideUp 0.8s ease;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(50px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .header {
+      background-color: #228B22;
+      color: white;
+      text-align: center;
+      padding: 15px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .chat-box {
+      padding: 15px;
+      height: 400px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: #f9f9f9;
+    }
+
+    .message {
+      padding: 10px 15px;
+      border-radius: 15px;
+      max-width: 80%;
+      line-height: 1.4;
+      animation: slideIn 0.3s ease;
+    }
+
+    .user {
+      align-self: flex-end;
+      background-color: #DCF8C6;
+      animation-name: slideInRight;
+    }
+
+    .bot {
+      align-self: flex-start;
+      background-color: #E4E6EB;
+      animation-name: slideInLeft;
+    }
+
+    @keyframes slideInRight {
+      from { transform: translateX(100px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    @keyframes slideInLeft {
+      from { transform: translateX(-100px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    .input-area {
+      display: flex;
+      border-top: 1px solid #ddd;
+      padding: 10px;
+      gap: 10px;
+    }
+
+    .input-area input {
+      flex: 1;
+      padding: 10px;
+      border-radius: 25px;
+      border: 1px solid #ccc;
+      outline: none;
+      transition: 0.2s ease;
+    }
+
+    .input-area input:focus {
+      border-color: #228B22;
+      box-shadow: 0 0 5px #228B22;
+    }
+
+    .input-area button {
+      padding: 10px 20px;
+      border-radius: 25px;
+      border: none;
+      background-color: #228B22;
+      color: white;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .input-area button:hover {
+      background-color: #1e7e1e;
+    }
+
+    @media screen and (max-width: 600px) {
+      .container {
+        margin: 0 10px;
+      }
+
+      .chat-box {
+        height: 350px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">ChatBot Desa Pongpongan</div>
+    <div id="chat" class="chat-box"></div>
+    <div class="input-area">
+      <input id="input" type="text" placeholder="Tulis pesan..." onkeydown="if(event.key==='Enter') sendMessage()">
+      <button onclick="sendMessage()">Kirim</button>
+    </div>
+  </div>
+
+  <script>
+    async function sendMessage() {
+      const input = document.getElementById('input');
+      const chatBox = document.getElementById('chat');
+      const message = input.value.trim();
+
+      if (!message) return;
+
+      // Tampilkan pesan user
+      const userDiv = document.createElement('div');
+      userDiv.className = 'message user';
+      userDiv.textContent = `Kamu: ${message}`;
+      chatBox.appendChild(userDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      input.value = '';
+
+      // Tambah loading efek bot (opsional)
+      const loadingDiv = document.createElement('div');
+      loadingDiv.className = 'message bot';
+      loadingDiv.textContent = 'Bot sedang mengetik...';
+      chatBox.appendChild(loadingDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      // Kirim ke server
+      const res = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message })
+      });
+      
+      const data = await res.json();
+
+      // Hapus loading
+      chatBox.removeChild(loadingDiv);
+
+      // Tampilkan balasan bot
+      const botDiv = document.createElement('div');
+      botDiv.className = 'message bot';
+      botDiv.textContent = `Bot: ${data.reply}`;
+      chatBox.appendChild(botDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+  </script>
+
+</body>
+</html>
