@@ -25,7 +25,7 @@ document.querySelector("form").addEventListener("submit", async (e) => {
     console.error("Gagal:", error);
     chatContainer.innerHTML += `<div class="bot-message">Bot error!</div>`;
   }
-});
+}); 
 async function sendMessage() {
   const input = document.getElementById('user-input');
   const message = input.value.trim();

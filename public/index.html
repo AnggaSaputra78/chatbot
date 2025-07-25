@@ -145,49 +145,51 @@
   </div>
 
   <script>
-    async function sendMessage() {
-      const input = document.getElementById('input');
-      const chatBox = document.getElementById('chat');
-      const message = input.value.trim();
+  async function sendMessage() {
+    const input = document.getElementById('input');
+    const chatBox = document.getElementById('chat');
+    const message = input.value.trim();
+    if (!message) return;
 
-      if (!message) return;
+    // Tampilkan pesan user
+    const userDiv = document.createElement('div');
+    userDiv.className = 'message user';
+    userDiv.textContent = `Kamu: ${message}`;
+    chatBox.appendChild(userDiv);
+    input.value = '';
 
-      // Tampilkan pesan user
-      const userDiv = document.createElement('div');
-      userDiv.className = 'message user';
-      userDiv.textContent = `Kamu: ${message}`;
-      chatBox.appendChild(userDiv);
-      chatBox.scrollTop = chatBox.scrollHeight;
+    // Tampilkan loading
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'message bot';
+    loadingDiv.textContent = 'Bot sedang mengetik...';
+    chatBox.appendChild(loadingDiv);
 
-      input.value = '';
-
-      // Tambah loading efek bot (opsional)
-      const loadingDiv = document.createElement('div');
-      loadingDiv.className = 'message bot';
-      loadingDiv.textContent = 'Bot sedang mengetik...';
-      chatBox.appendChild(loadingDiv);
-      chatBox.scrollTop = chatBox.scrollHeight;
-
-      // Kirim ke server
+    try {
       const res = await fetch('/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message })
+        body: JSON.stringify({ message }) // pastikan ini bukan "messages"
       });
-      
-      const data = await res.json();
 
-      // Hapus loading
+      const data = await res.json();
+      console.log("Respon dari server:", data); // log hasilnya
+
       chatBox.removeChild(loadingDiv);
 
-      // Tampilkan balasan bot
       const botDiv = document.createElement('div');
       botDiv.className = 'message bot';
-      botDiv.textContent = `Bot: ${data.reply}`;
+      botDiv.textContent = `Bot: ${data.reply || 'Bot tidak bisa menjawab.'}`;
       chatBox.appendChild(botDiv);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
-  </script>
 
+    } catch (error) {
+      console.error('Gagal fetch:', error);
+      chatBox.removeChild(loadingDiv);
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'message bot';
+      errorDiv.textContent = 'Bot error.';
+      chatBox.appendChild(errorDiv);
+    }
+  }
+</script>
 </body>
 </html>
