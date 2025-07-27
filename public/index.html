@@ -13,7 +13,6 @@
       --chat-bg: #f9f9f9;
       --user-msg-bg: #dcf8c6;
       --bot-msg-bg: #fff;
-      --footer-bg: #fff;
     }
 
     body.dark {
@@ -24,7 +23,6 @@
       --chat-bg: #2b2b2b;
       --user-msg-bg: #4caf50;
       --bot-msg-bg: #333;
-      --footer-bg: #1e1e1e;
     }
 
     body {
@@ -143,24 +141,6 @@
       cursor: pointer;
       font-size: 16px;
     }
-
-    .footer {
-      background: var(--footer-bg);
-      padding: 10px;
-      border-top: 1px solid #ccc;
-      text-align: center;
-      transition: background 0.3s;
-    }
-
-    #clear-history {
-      background: #ff4444;
-      color: white;
-      border: none;
-      padding: 8px 15px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 14px;
-    }
   </style>
 </head>
 <body>
@@ -176,40 +156,9 @@
     <input id="input" type="text" placeholder="Tulis pesan..." onkeydown="if(event.key==='Enter') sendMessage()">
     <button class="btn" onclick="sendMessage()">➤</button>
   </div>
-  <div class="footer">
-    <button id="clear-history">🗑 Hapus Riwayat</button>
-  </div>
 </div>
 
 <script>
-  async function loadHistory() {
-    const res = await fetch('/history');
-    const data = await res.json();
-    const chatBox = document.getElementById('chat');
-    chatBox.innerHTML = '';
-
-    data.history.forEach(item => {
-      const userDiv = document.createElement('div');
-      userDiv.className = 'message user';
-      userDiv.textContent = item.user;
-      chatBox.appendChild(userDiv);
-
-      const botDiv = document.createElement('div');
-      botDiv.className = 'message bot';
-      botDiv.textContent = item.bot;
-      chatBox.appendChild(botDiv);
-    });
-
-    chatBox.scrollTop = chatBox.scrollHeight;
-  }
-
-  document.getElementById('clear-history').addEventListener('click', async () => {
-    if (confirm('Hapus semua riwayat chat?')) {
-      await fetch('/history', { method: 'DELETE' });
-      loadHistory();
-    }
-  });
-
   async function sendMessage() {
     const input = document.getElementById('input');
     const chatBox = document.getElementById('chat');
@@ -271,8 +220,6 @@
     document.body.classList.toggle('dark');
     toggleBtn.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
   });
-
-  window.onload = loadHistory;
 </script>
 </body>
 </html>
