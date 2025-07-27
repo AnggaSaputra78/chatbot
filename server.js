@@ -13,30 +13,9 @@ const cheerio = require('cheerio');
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// ✅ Static folder
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ✅ Multer untuk upload file
 const upload = multer({ dest: 'uploads/' });
-
-// ✅ File untuk simpan history
-const HISTORY_FILE = path.join(__dirname, 'chatHistory.json');
-
-// ✅ Load history saat server start
-let chatHistory = [];
-if (fs.existsSync(HISTORY_FILE)) {
-  try {
-    chatHistory = JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf-8'));
-  } catch {
-    chatHistory = [];
-  }
-}
-
-// ✅ Simpan history ke file JSON
-function saveHistory() {
-  fs.writeFileSync(HISTORY_FILE, JSON.stringify(chatHistory, null, 2));
-}
 
 // ✅ Data cadangan jika gagal scrape
 const dataCadangan = `
@@ -63,16 +42,13 @@ Layanan Desa:
 - Informasi Bantuan Sosial
 `;
 
-// ✅ Fungsi ambil data dari situs desa (scraping) dengan cache
+// ✅ Ambil data dari situs desa (scraping)
 async function ambilDataDesa() {
   const cacheFile = path.join(__dirname, 'data.json');
   try {
     const url = 'https://pongpongan-merakurak.desa.id/';
     const { data } = await axios.get(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0',
-        'Accept': 'text/html'
-      },
+      headers: { 'User-Agent': 'Mozilla/5.0' },
       timeout: 15000
     });
 
@@ -86,7 +62,6 @@ async function ambilDataDesa() {
       fs.writeFileSync(cacheFile, JSON.stringify({ info: informasiDesa }, null, 2));
       return informasiDesa;
     }
-
     throw new Error('Konten kosong');
   } catch (error) {
     console.warn('⚠ Gagal ambil data desa, coba gunakan cache atau cadangan.');
@@ -98,12 +73,7 @@ async function ambilDataDesa() {
   }
 }
 
-// ✅ Halaman utama
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// ✅ Endpoint Chatbot
+// ✅ Endpoint Chat
 app.post('/chat', upload.single('file'), async (req, res) => {
   const { message } = req.body;
   const file = req.file;
@@ -119,7 +89,6 @@ app.post('/chat', upload.single('file'), async (req, res) => {
       fs.unlinkSync(file.path);
     }
 
-    // ✅ Ambil data desa
     const infoDesa = await ambilDataDesa();
 
     const prompt = `
@@ -136,7 +105,6 @@ Isi file:
 ${fileContent || 'Tidak ada file atau file kosong.'}
     `;
 
-    // ✅ Kirim ke API Groq
     const response = await axios.post(
       'https://api.groq.com/openai/v1/chat/completions',
       {
@@ -155,37 +123,14 @@ ${fileContent || 'Tidak ada file atau file kosong.'}
       }
     );
 
-    const botReply = response?.data?.choices?.[0]?.message?.content;
-    if (!botReply) {
-      return res.status(500).json({ error: 'Bot tidak memberikan jawaban.' });
-    }
+    const botReply = response?.data?.choices?.[0]?.message?.content || 'Bot tidak bisa menjawab.';
 
-    // ✅ Simpan ke history
-    chatHistory.push({
-      user: message || '(file)',
-      bot: botReply.trim(),
-      time: new Date().toLocaleString('id-ID')
-    });
-    saveHistory();
-
-    res.json({ reply: botReply.trim() });
+    res.json({ reply: botReply });
 
   } catch (error) {
     console.error('Error:', error.message);
     res.status(500).json({ error: 'Terjadi kesalahan server.' });
   }
-});
-
-// ✅ Endpoint ambil history chat
-app.get('/history', (req, res) => {
-  res.json({ history: chatHistory });
-});
-
-// ✅ Endpoint hapus history
-app.delete('/history', (req, res) => {
-  chatHistory = [];
-  saveHistory();
-  res.json({ message: 'Riwayat chat berhasil dihapus.' });
 });
 
 // ✅ Fungsi ekstrak teks dari file
