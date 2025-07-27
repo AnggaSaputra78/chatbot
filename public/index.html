@@ -5,70 +5,124 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ChatBot Desa Pongpongan</title>
   <style>
+    :root {
+      --bg-color: #f4f4f4;
+      --text-color: #000;
+      --container-bg: #fff;
+      --header-bg: #2e7d32;
+      --chat-bg: #f9f9f9;
+      --user-msg-bg: #dcf8c6;
+      --bot-msg-bg: #fff;
+      --footer-bg: #fff;
+    }
+
+    body.dark {
+      --bg-color: #121212;
+      --text-color: #fff;
+      --container-bg: #1e1e1e;
+      --header-bg: #388e3c;
+      --chat-bg: #2b2b2b;
+      --user-msg-bg: #4caf50;
+      --bot-msg-bg: #333;
+      --footer-bg: #1e1e1e;
+    }
+
     body {
       font-family: Arial, sans-serif;
-      background: #f4f4f4;
+      background: var(--bg-color);
+      color: var(--text-color);
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
+      margin: 0;
+      transition: background 0.3s, color 0.3s;
     }
+
     .container {
-      background: white;
+      background: var(--container-bg);
       width: 400px;
       height: 90vh;
       display: flex;
       flex-direction: column;
       border-radius: 10px;
       overflow: hidden;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      transition: background 0.3s;
     }
+
     .header {
-      background: #2e7d32;
+      background: var(--header-bg);
       color: white;
       text-align: center;
       padding: 15px;
+      font-size: 18px;
       font-weight: bold;
+      position: relative;
     }
+
+    #toggle-dark {
+      position: absolute;
+      right: 10px;
+      top: 10px;
+      background: #fff;
+      color: #000;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
     .chat-box {
       flex: 1;
       padding: 15px;
       overflow-y: auto;
-      background: #f9f9f9;
+      background: var(--chat-bg);
       display: flex;
       flex-direction: column;
+      transition: background 0.3s;
     }
+
     .message {
-      margin: 10px 0;
+      margin: 8px 0;
       padding: 10px;
-      border-radius: 10px;
+      border-radius: 8px;
       max-width: 80%;
+      font-size: 14px;
+      line-height: 1.4;
+      transition: background 0.3s;
     }
+
     .user {
-      background: #dcf8c6;
+      background: var(--user-msg-bg);
       align-self: flex-end;
     }
+
     .bot {
-      background: #fff;
+      background: var(--bot-msg-bg);
       border: 1px solid #ccc;
-      display: flex;
-      align-items: center;
-      gap: 10px;
+      align-self: flex-start;
     }
+
     .input-area {
       display: flex;
       gap: 10px;
       padding: 10px;
       background: #eee;
+      border-top: 1px solid #ccc;
     }
+
     .input-area input[type="text"] {
       flex: 1;
       padding: 10px;
       border-radius: 5px;
       border: 1px solid #ccc;
+      font-size: 14px;
     }
+
     .file-label {
-      background: #2e7d32;
+      background: var(--header-bg);
       color: white;
       border-radius: 50%;
       width: 40px;
@@ -77,34 +131,44 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
+      font-size: 18px;
     }
+
     .btn {
-      padding: 10px;
-      background: #2e7d32;
+      padding: 10px 15px;
+      background: var(--header-bg);
       color: white;
       border: none;
       border-radius: 5px;
       cursor: pointer;
+      font-size: 16px;
     }
 
-    /* ✅ Spinner Animasi */
-    .loading-spinner {
-      width: 20px;
-      height: 20px;
-      border: 3px solid #ccc;
-      border-top: 3px solid #2e7d32;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
+    .footer {
+      background: var(--footer-bg);
+      padding: 10px;
+      border-top: 1px solid #ccc;
+      text-align: center;
+      transition: background 0.3s;
     }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+
+    #clear-history {
+      background: #ff4444;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
     }
   </style>
 </head>
 <body>
 <div class="container">
-  <div class="header">ChatBot Desa Pongpongan</div>
+  <div class="header">
+    ChatBot Desa Pongpongan
+    <button id="toggle-dark">🌙</button>
+  </div>
   <div id="chat" class="chat-box"></div>
   <div class="input-area">
     <label for="file-input" class="file-label">📎</label>
@@ -112,9 +176,40 @@
     <input id="input" type="text" placeholder="Tulis pesan..." onkeydown="if(event.key==='Enter') sendMessage()">
     <button class="btn" onclick="sendMessage()">➤</button>
   </div>
+  <div class="footer">
+    <button id="clear-history">🗑 Hapus Riwayat</button>
+  </div>
 </div>
 
 <script>
+  async function loadHistory() {
+    const res = await fetch('/history');
+    const data = await res.json();
+    const chatBox = document.getElementById('chat');
+    chatBox.innerHTML = '';
+
+    data.history.forEach(item => {
+      const userDiv = document.createElement('div');
+      userDiv.className = 'message user';
+      userDiv.textContent = item.user;
+      chatBox.appendChild(userDiv);
+
+      const botDiv = document.createElement('div');
+      botDiv.className = 'message bot';
+      botDiv.textContent = item.bot;
+      chatBox.appendChild(botDiv);
+    });
+
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  document.getElementById('clear-history').addEventListener('click', async () => {
+    if (confirm('Hapus semua riwayat chat?')) {
+      await fetch('/history', { method: 'DELETE' });
+      loadHistory();
+    }
+  });
+
   async function sendMessage() {
     const input = document.getElementById('input');
     const chatBox = document.getElementById('chat');
@@ -142,15 +237,10 @@
     fileInput.value = '';
     chatBox.scrollTop = chatBox.scrollHeight;
 
-    // ✅ Animasi Loading saat bot memproses pesan/file
     const loadingDiv = document.createElement('div');
     loadingDiv.className = 'message bot';
-    loadingDiv.innerHTML = `
-      <div class="loading-spinner"></div>
-      <span>Sedang memproses ${file ? 'file...' : 'pesan...'}</span>
-    `;
+    loadingDiv.textContent = 'Bot sedang mengetik...';
     chatBox.appendChild(loadingDiv);
-    chatBox.scrollTop = chatBox.scrollHeight;
 
     const formData = new FormData();
     if (message) formData.append('message', message);
@@ -174,6 +264,15 @@
       chatBox.appendChild(errorDiv);
     }
   }
+
+  // ✅ Toggle Dark Mode
+  const toggleBtn = document.getElementById('toggle-dark');
+  toggleBtn.addEventListener('click', () => {
+    document.body.classList.toggle('dark');
+    toggleBtn.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
+  });
+
+  window.onload = loadHistory;
 </script>
 </body>
 </html>
