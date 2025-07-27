@@ -13,11 +13,31 @@
     "@vercel/speed-insights": "^1.2.0",
     "axios": "^1.11.0",
     "body-parser": "^2.2.0",
-    "dotenv": "^17.2.0",
+    "cheerio": "^1.1.2",
+    "cors": "^2.8.5",
+    "docx": "^9.5.1",
+    "dotenv": "^17.2.1",
     "ejs": "^3.1.10",
+    "exceljs": "^4.4.0",
     "express": "^5.1.0",
+    "mammoth": "^1.9.1",
+    "multer": "^2.0.2",
+    "node-fetch": "^3.3.2",
     "openai": "^3.3.0",
-    "sqlite3": "^5.1.7"
+    "pdf-parse": "^1.1.1",
+    "pdfkit": "^0.17.1",
+    "sqlite3": "^5.1.7",
+    "tesseract.js": "^6.0.1",
+    "textract": "^2.5.0",
+    "unoconv": "^0.1.2"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Anggasaputra78/chatbot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Anggasaputra78/chatbot/issues"
+  },
+  "homepage": "https://github.com/Anggasaputra78/chatbot#readme",
   "description": ""
 }

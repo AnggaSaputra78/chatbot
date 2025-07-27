@@ -1,192 +1,176 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ChatBot Desa Pongpongan</title>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', sans-serif;
-    }
-
     body {
-      background-color: #f2f2f2;
-      padding: 20px;
-      animation: fadeIn 1s ease;
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
     }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
     .container {
-      max-width: 500px;
-      margin: 0 auto;
-      background-color: #ffffff;
-      border-radius: 15px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      background: white;
+      width: 400px;
+      height: 90vh;
+      display: flex;
+      flex-direction: column;
+      border-radius: 10px;
       overflow: hidden;
-      animation: slideUp 0.8s ease;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-
-    @keyframes slideUp {
-      from { transform: translateY(50px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-
     .header {
-      background-color: #228B22;
+      background: #2e7d32;
       color: white;
       text-align: center;
       padding: 15px;
-      font-size: 20px;
       font-weight: bold;
     }
-
     .chat-box {
+      flex: 1;
       padding: 15px;
-      height: 400px;
       overflow-y: auto;
+      background: #f9f9f9;
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      background: #f9f9f9;
     }
-
     .message {
-      padding: 10px 15px;
-      border-radius: 15px;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 10px;
       max-width: 80%;
-      line-height: 1.4;
-      animation: slideIn 0.3s ease;
     }
-
     .user {
+      background: #dcf8c6;
       align-self: flex-end;
-      background-color: #DCF8C6;
-      animation-name: slideInRight;
     }
-
     .bot {
-      align-self: flex-start;
-      background-color: #E4E6EB;
-      animation-name: slideInLeft;
+      background: #fff;
+      border: 1px solid #ccc;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
-
-    @keyframes slideInRight {
-      from { transform: translateX(100px); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
-    }
-
-    @keyframes slideInLeft {
-      from { transform: translateX(-100px); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
-    }
-
     .input-area {
       display: flex;
-      border-top: 1px solid #ddd;
-      padding: 10px;
       gap: 10px;
+      padding: 10px;
+      background: #eee;
     }
-
-    .input-area input {
+    .input-area input[type="text"] {
       flex: 1;
       padding: 10px;
-      border-radius: 25px;
+      border-radius: 5px;
       border: 1px solid #ccc;
-      outline: none;
-      transition: 0.2s ease;
     }
-
-    .input-area input:focus {
-      border-color: #228B22;
-      box-shadow: 0 0 5px #228B22;
-    }
-
-    .input-area button {
-      padding: 10px 20px;
-      border-radius: 25px;
-      border: none;
-      background-color: #228B22;
+    .file-label {
+      background: #2e7d32;
       color: white;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
-      transition: background 0.2s ease;
+    }
+    .btn {
+      padding: 10px;
+      background: #2e7d32;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
     }
 
-    .input-area button:hover {
-      background-color: #1e7e1e;
+    /* ✅ Spinner Animasi */
+    .loading-spinner {
+      width: 20px;
+      height: 20px;
+      border: 3px solid #ccc;
+      border-top: 3px solid #2e7d32;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
     }
-
-    @media screen and (max-width: 600px) {
-      .container {
-        margin: 0 10px;
-      }
-
-      .chat-box {
-        height: 350px;
-      }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
   </style>
 </head>
 <body>
-
-  <div class="container">
-    <div class="header">ChatBot Desa Pongpongan</div>
-    <div id="chat" class="chat-box"></div>
-    <div class="input-area">
-      <input id="input" type="text" placeholder="Tulis pesan..." onkeydown="if(event.key==='Enter') sendMessage()">
-      <button onclick="sendMessage()">Kirim</button>
-    </div>
+<div class="container">
+  <div class="header">ChatBot Desa Pongpongan</div>
+  <div id="chat" class="chat-box"></div>
+  <div class="input-area">
+    <label for="file-input" class="file-label">📎</label>
+    <input type="file" id="file-input" hidden/>
+    <input id="input" type="text" placeholder="Tulis pesan..." onkeydown="if(event.key==='Enter') sendMessage()">
+    <button class="btn" onclick="sendMessage()">➤</button>
   </div>
+</div>
 
-  <script>
+<script>
   async function sendMessage() {
     const input = document.getElementById('input');
     const chatBox = document.getElementById('chat');
+    const fileInput = document.getElementById('file-input');
     const message = input.value.trim();
-    if (!message) return;
+    const file = fileInput.files[0];
 
-    // Tampilkan pesan user
-    const userDiv = document.createElement('div');
-    userDiv.className = 'message user';
-    userDiv.textContent = `Kamu: ${message}`;
-    chatBox.appendChild(userDiv);
+    if (!message && !file) return;
+
+    if (message) {
+      const userDiv = document.createElement('div');
+      userDiv.className = 'message user';
+      userDiv.textContent = message;
+      chatBox.appendChild(userDiv);
+    }
+
+    if (file) {
+      const fileDiv = document.createElement('div');
+      fileDiv.className = 'message user';
+      fileDiv.textContent = `📎 File: ${file.name}`;
+      chatBox.appendChild(fileDiv);
+    }
+
     input.value = '';
+    fileInput.value = '';
+    chatBox.scrollTop = chatBox.scrollHeight;
 
-    // Tampilkan loading
+    // ✅ Animasi Loading saat bot memproses pesan/file
     const loadingDiv = document.createElement('div');
     loadingDiv.className = 'message bot';
-    loadingDiv.textContent = 'Bot sedang mengetik...';
+    loadingDiv.innerHTML = `
+      <div class="loading-spinner"></div>
+      <span>Sedang memproses ${file ? 'file...' : 'pesan...'}</span>
+    `;
     chatBox.appendChild(loadingDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    const formData = new FormData();
+    if (message) formData.append('message', message);
+    if (file) formData.append('file', file);
 
     try {
-      const res = await fetch('/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message }) // pastikan ini bukan "messages"
-      });
-
+      const res = await fetch('/chat', { method: 'POST', body: formData });
       const data = await res.json();
-      console.log("Respon dari server:", data); // log hasilnya
-
       chatBox.removeChild(loadingDiv);
 
       const botDiv = document.createElement('div');
       botDiv.className = 'message bot';
-      botDiv.textContent = `Bot: ${data.reply || 'Bot tidak bisa menjawab.'}`;
+      botDiv.textContent = data.reply || 'Bot tidak bisa menjawab.';
       chatBox.appendChild(botDiv);
-
+      chatBox.scrollTop = chatBox.scrollHeight;
     } catch (error) {
-      console.error('Gagal fetch:', error);
       chatBox.removeChild(loadingDiv);
       const errorDiv = document.createElement('div');
       errorDiv.className = 'message bot';
-      errorDiv.textContent = 'Bot error.';
+      errorDiv.textContent = 'Terjadi kesalahan saat menghubungi bot.';
       chatBox.appendChild(errorDiv);
     }
   }
