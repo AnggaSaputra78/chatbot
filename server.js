@@ -1,9 +1,9 @@
 require('dotenv').config();
 const express = require('express');
-const axios = require('axios');
-const path = require('path');
 const multer = require('multer');
+const path = require('path');
 const fs = require('fs');
+const axios = require('axios');
 const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
 const textract = require('textract');
@@ -17,32 +17,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const upload = multer({ dest: 'uploads/' });
 
-// ✅ Data cadangan jika gagal scrape
-const dataCadangan = `
-Profil Desa Pongpongan:
-- Kecamatan: Merakurak
-- Kabupaten: Tuban, Jawa Timur
-- Kode Pos: 62355
-- Luas Wilayah: 3,12 km²
-- Jumlah Penduduk: ± 3.000 jiwa
+const dataCadangan = `... (isi tetap sama seperti di atas)`; // Gunakan yang sebelumnya
 
-Visi Desa:
-"Terwujudnya Desa Pongpongan yang maju, mandiri, dan sejahtera berbasis gotong royong."
+let riwayatPercakapan = [];
 
-Misi Desa:
-1. Peningkatan pelayanan publik.
-2. Pengembangan ekonomi desa berbasis UMKM.
-3. Pembangunan infrastruktur yang merata.
-4. Penguatan nilai sosial dan budaya.
-
-Layanan Desa:
-- Surat Keterangan Domisili
-- Surat Keterangan Usaha
-- Surat Pengantar Nikah
-- Informasi Bantuan Sosial
-`;
-
-// ✅ Ambil data dari situs desa (scraping)
 async function ambilDataDesa() {
   const cacheFile = path.join(__dirname, 'data.json');
   try {
@@ -64,7 +42,7 @@ async function ambilDataDesa() {
     }
     throw new Error('Konten kosong');
   } catch (error) {
-    console.warn('⚠ Gagal ambil data desa, coba gunakan cache atau cadangan.');
+    console.warn('⚠ Gagal ambil data desa, gunakan cache/cadangan.');
     if (fs.existsSync(cacheFile)) {
       const cacheData = JSON.parse(fs.readFileSync(cacheFile, 'utf-8'));
       return cacheData.info || dataCadangan;
@@ -73,67 +51,6 @@ async function ambilDataDesa() {
   }
 }
 
-// ✅ Endpoint Chat
-app.post('/chat', upload.single('file'), async (req, res) => {
-  const { message } = req.body;
-  const file = req.file;
-
-  if (!message && !file) {
-    return res.status(400).json({ error: 'Pesan atau file harus ada.' });
-  }
-
-  try {
-    let fileContent = '';
-    if (file) {
-      fileContent = await extractTextFromFile(file.path, file.mimetype);
-      fs.unlinkSync(file.path);
-    }
-
-    const infoDesa = await ambilDataDesa();
-
-    const prompt = `
-Anda adalah asisten Desa Pongpongan.
-Jawablah dengan bahasa sopan dan informatif.
-Gunakan informasi resmi berikut:
-
-${infoDesa}
-
-Pertanyaan pengguna:
-${message || 'Tidak ada pesan.'}
-
-Isi file:
-${fileContent || 'Tidak ada file atau file kosong.'}
-    `;
-
-    const response = await axios.post(
-      'https://api.groq.com/openai/v1/chat/completions',
-      {
-        model: 'llama3-8b-8192',
-        messages: [
-          { role: 'system', content: 'Anda adalah asisten pintar untuk warga desa.' },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.7
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-
-    const botReply = response?.data?.choices?.[0]?.message?.content || 'Bot tidak bisa menjawab.';
-
-    res.json({ reply: botReply });
-
-  } catch (error) {
-    console.error('Error:', error.message);
-    res.status(500).json({ error: 'Terjadi kesalahan server.' });
-  }
-});
-
-// ✅ Fungsi ekstrak teks dari file
 async function extractTextFromFile(filePath, mimetype) {
   if (mimetype.startsWith('image/')) {
     const result = await Tesseract.recognize(filePath, 'ind');
@@ -167,6 +84,69 @@ async function extractTextFromFile(filePath, mimetype) {
     return '';
   }
 }
+
+app.post('/chat', upload.single('file'), async (req, res) => {
+  const { message } = req.body;
+  const file = req.file;
+
+  if (!message && !file) {
+    return res.status(400).json({ error: 'Pesan atau file harus ada.' });
+  }
+
+  try {
+    let fileContent = '';
+    if (file) {
+      fileContent = await extractTextFromFile(file.path, file.mimetype);
+      fs.unlinkSync(file.path); // hapus file setelah dibaca
+    }
+
+    const infoDesa = await ambilDataDesa();
+    const groqKey = process.env.GROQ_API_KEY;
+    if (!groqKey) throw new Error('API Key GROQ tidak ditemukan di .env');
+
+    riwayatPercakapan.push({ role: 'user', content: message });
+
+    const messages = [
+      {
+        role: 'system',
+        content: `Anda adalah asisten cerdas untuk Desa Pongpongan. Jawablah pertanyaan dengan bahasa yang sopan, jelas,informatif dan sesingkat mungkin atau langsung ke point utama . Gunakan informasi berikut:\n\n${infoDesa}`,
+      },
+      ...riwayatPercakapan,
+      {
+        role: 'user',
+        content: fileContent
+          ? `${message}\n\n(Ini isi file yang diunggah:\n${fileContent})`
+          : message,
+      },
+    ];
+
+    const response = await axios.post(
+      'https://api.groq.com/openai/v1/chat/completions',
+      {
+        model: 'llama3-70b-8192', // atau mixtral-8x7b-32768
+        messages,
+        temperature: 0.7,
+        max_tokens: 1000,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${groqKey}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    const botReply = response.data.choices[0].message.content.trim();
+    riwayatPercakapan.push({ role: 'assistant', content: botReply });
+
+    res.json({ reply: botReply });
+  } catch (error) {
+    console.error('❌ Error:', error.response?.data || error.message);
+    res.status(500).json({
+      reply: '⚠ Terjadi kesalahan server. Gunakan informasi cadangan:\n' + dataCadangan
+    });
+  }
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Server jalan di http://localhost:${PORT}`));
