@@ -2,7 +2,9 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
   <title>ChatBot Desa Pongpongan</title>
   <style>
     :root {
@@ -14,6 +16,7 @@
       --user-msg-bg: #dcf8c6;
       --bot-msg-bg: #fff;
       --accent: #4caf50;
+      --error-color: #f44336;
     }
 
     body.dark {
@@ -24,212 +27,285 @@
       --chat-bg: #2b2b2b;
       --user-msg-bg: #4caf50;
       --bot-msg-bg: #333;
+      --error-color: #e57373;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      touch-action: manipulation;
     }
 
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: var(--bg-color);
       color: var(--text-color);
       display: flex;
       justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
+      align-items: stretch;
       transition: background 0.3s, color 0.3s;
+      line-height: 1.5;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
     }
 
     .container {
       background: var(--container-bg);
       width: 100%;
-      height: 100vh;
+      height: 100%;
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      animation: fadeIn 0.8s ease-in-out;
+      position: relative;
     }
 
-    /* ✅ HEADER DENGAN ANIMASI */
+    /* Header Styles */
     .header {
       background: var(--header-bg);
       background-size: 400% 400%;
       color: white;
       text-align: center;
-      padding: 20px;
-      font-size: 22px;
+      padding: 15px 20px;
+      font-size: clamp(18px, 4vw, 22px);
       font-weight: bold;
       position: relative;
-      animation: slideDown 0.8s ease, gradientMove 6s infinite linear;
+      z-index: 10;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     #toggle-dark {
       position: absolute;
-      right: 15px;
-      top: 15px;
-      background: #fff;
-      color: #000;
+      right: 10px;
+      background: rgba(255,255,255,0.2);
+      color: #fff;
       border: none;
-      padding: 8px 12px;
-      border-radius: 5px;
+      padding: 6px 10px;
+      border-radius: 50%;
       cursor: pointer;
-      font-size: 14px;
-      transition: transform 0.3s;
-    }
-    #toggle-dark:hover {
-      transform: scale(1.1);
+      font-size: 16px;
+      transition: all 0.3s;
+      aspect-ratio: 1/1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
+    /* Chat Box Styles */
     .chat-box {
       flex: 1;
-      padding: 15px;
+      padding: 10px 15px;
       overflow-y: auto;
       background: var(--chat-bg);
       display: flex;
       flex-direction: column;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
     }
 
     .message {
-      margin: 10px 0;
-      padding: 12px;
-      border-radius: 8px;
-      max-width: 70%;
-      font-size: 16px;
+      margin: 8px 0;
+      padding: 10px 14px;
+      border-radius: 12px;
+      max-width: 90%;
+      font-size: clamp(14px, 3.5vw, 16px);
       line-height: 1.4;
-      animation: fadeUp 0.5s ease-in-out;
+      animation: fadeUp 0.3s ease-out;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      word-wrap: break-word;
+      position: relative;
     }
 
     .user {
       background: var(--user-msg-bg);
       align-self: flex-end;
+      margin-left: 20%;
+      border-bottom-right-radius: 4px;
     }
 
     .bot {
       background: var(--bot-msg-bg);
-      border: 1px solid #ccc;
+      border: 1px solid rgba(0,0,0,0.1);
       align-self: flex-start;
-      position: relative;
+      margin-right: 20%;
+      border-bottom-left-radius: 4px;
     }
 
-    /* ✅ Loading Animation */
-    .loading {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .loading span {
-      width: 8px;
-      height: 8px;
-      background: #888;
-      border-radius: 50%;
-      display: inline-block;
-      animation: blink 1s infinite;
-    }
-    .loading span:nth-child(2) { animation-delay: 0.2s; }
-    .loading span:nth-child(3) { animation-delay: 0.4s; }
-
-    @keyframes blink {
-      0%, 80%, 100% { opacity: 0.3; }
-      40% { opacity: 1; }
-    }
-
-    /* ✅ Input Area */
+    /* Input Area Styles */
     .input-area {
       display: flex;
-      gap: 10px;
-      padding: 15px;
-      background: #eee;
-      border-top: 1px solid #ccc;
-      animation: slideUp 0.8s ease;
+      gap: 8px;
+      padding: 12px 10px;
+      background: var(--container-bg);
+      border-top: 1px solid rgba(0,0,0,0.1);
+      position: sticky;
+      bottom: 0;
+      z-index: 5;
+      min-height: 74px;
     }
 
     .input-area input[type="text"] {
       flex: 1;
-      padding: 14px;
-      border-radius: 8px;
+      padding: 12px 14px;
+      border-radius: 25px;
       border: 1px solid #ccc;
-      font-size: 16px;
-      transition: all 0.3s ease;
-    }
-    .input-area input[type="text"]:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 8px rgba(76,175,80,0.4);
-      outline: none;
+      font-size: clamp(14px, 4vw, 16px);
+      background: var(--chat-bg);
+      color: var(--text-color);
+      min-height: 50px;
+      max-height: 100px;
+      resize: none;
     }
 
-    .file-label {
-      background: #2e7d32;
-      color: white;
-      border-radius: 50%;
-      width: 45px;
-      height: 45px;
+    .file-label, .btn {
+      flex-shrink: 0;
+      width: 50px;
+      height: 50px;
       display: flex;
       align-items: center;
       justify-content: center;
+      border-radius: 50%;
       cursor: pointer;
-      font-size: 20px;
-      transition: transform 0.3s ease, background 0.3s ease;
+      transition: all 0.2s;
     }
-    .file-label:hover {
-      transform: scale(1.1);
+
+    .file-label {
       background: var(--accent);
+      color: white;
+      font-size: 20px;
     }
 
     .btn {
-      padding: 12px 18px;
-      background: #2e7d32;
+      background: var(--accent);
       color: white;
       border: none;
-      border-radius: 8px;
-      cursor: pointer;
       font-size: 18px;
-      transition: transform 0.2s ease, background 0.3s ease;
-    }
-    .btn:hover {
-      background: var(--accent);
-      transform: scale(1.05);
-    }
-    .btn:active {
-      transform: scale(0.95);
     }
 
-    /* ✅ Footer */
+    /* Footer Styles */
     .footer {
       background: #2e7d32;
       color: white;
       text-align: center;
       padding: 10px;
-      font-size: 14px;
-      animation: fadeIn 1s ease-in-out;
+      font-size: clamp(12px, 3vw, 14px);
     }
 
-    /* ✅ Animasi */
-    @keyframes fadeIn {
-      from { opacity: 0; transform: scale(0.95); }
-      to { opacity: 1; transform: scale(1); }
-    }
+    /* Animations */
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(20px); }
+      from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    @keyframes slideUp {
-      from { transform: translateY(100%); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-    @keyframes slideDown {
-      from { transform: translateY(-100%); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
+
     @keyframes gradientMove {
       0% { background-position: 0% 50%; }
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
 
+    /* Scrollbar styling */
     .chat-box::-webkit-scrollbar {
-      width: 8px;
+      width: 6px;
     }
     .chat-box::-webkit-scrollbar-thumb {
-      background-color: #bbb;
-      border-radius: 4px;
+      background-color: rgba(0,0,0,0.2);
+      border-radius: 3px;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+      .header {
+        padding: 12px 15px;
+      }
+      
+      .message {
+        max-width: 85%;
+        padding: 8px 12px;
+      }
+      
+      .input-area {
+        padding: 10px 8px;
+      }
+      
+      .input-area input[type="text"] {
+        padding: 10px 12px;
+      }
+      
+      .file-label, .btn {
+        width: 44px;
+        height: 44px;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .message {
+        max-width: 90%;
+        font-size: 14px;
+      }
+      
+      .input-area {
+        gap: 6px;
+      }
+    }
+
+    /* Orientation specific styles */
+    @media (orientation: landscape) and (max-height: 500px) {
+      .header {
+        padding: 8px 15px;
+        min-height: 50px;
+      }
+      
+      .chat-box {
+        padding: 5px 10px;
+      }
+      
+      .message {
+        margin: 5px 0;
+        padding: 8px 10px;
+      }
+      
+      .input-area {
+        padding: 8px;
+        min-height: 60px;
+      }
+    }
+
+    /* Safe area insets for notches */
+    @supports (padding: max(0px)) {
+      body {
+        padding-left: max(12px, env(safe-area-inset-left));
+        padding-right: max(12px, env(safe-area-inset-right));
+        padding-bottom: max(12px, env(safe-area-inset-bottom));
+      }
+      
+      .header {
+        padding-top: max(15px, env(safe-area-inset-top));
+      }
+    }
+
+    /* PWA styles */
+    @media (display-mode: standalone) {
+      body {
+        padding-top: env(safe-area-inset-top);
+      }
+      
+      .header {
+        padding-top: calc(15px + env(safe-area-inset-top));
+      }
     }
   </style>
 </head>
@@ -242,7 +318,7 @@
   <div id="chat" class="chat-box"></div>
   <div class="input-area">
     <label for="file-input" class="file-label">📎</label>
-    <input type="file" id="file-input" hidden/>
+    <input type="file" id="file-input" accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png" hidden/>
     <input id="input" type="text" placeholder="Tulis pesan..." onkeydown="if(event.key==='Enter') sendMessage()">
     <button class="btn" onclick="sendMessage()">➤</button>
   </div>
@@ -252,6 +328,49 @@
 </div>
 
 <script>
+  // Inisialisasi tema dari localStorage
+  if (localStorage.getItem('darkMode') === 'true') {
+    document.body.classList.add('dark');
+    document.getElementById('toggle-dark').textContent = '☀️';
+  }
+
+  // Fungsi untuk mengatur tinggi viewport yang benar
+  function setViewportHeight() {
+    const vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+  }
+
+  // Panggil saat pertama kali load dan saat resize/orientation change
+  setViewportHeight();
+  window.addEventListener('resize', setViewportHeight);
+  window.addEventListener('orientationchange', setViewportHeight);
+
+  // Handle keyboard muncul di mobile
+  function handleKeyboard() {
+    const chatBox = document.getElementById('chat');
+    if (window.innerWidth <= 600) {
+      setTimeout(() => {
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }, 300);
+    }
+  }
+
+  document.getElementById('input').addEventListener('focus', handleKeyboard);
+
+  // Fullscreen handling
+  function toggleFullScreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable fullscreen: ${err.message}`);
+      });
+    }
+  }
+
+  // Coba masuk fullscreen saat pertama load (untuk PWA)
+  if (window.matchMedia('(display-mode: standalone)').matches) {
+    toggleFullScreen();
+  }
+
   async function sendMessage() {
     const input = document.getElementById('input');
     const chatBox = document.getElementById('chat');
@@ -261,61 +380,158 @@
 
     if (!message && !file) return;
 
+    // Tampilkan pesan pengguna
     if (message) {
-      const userDiv = document.createElement('div');
-      userDiv.className = 'message user';
-      userDiv.textContent = message;
-      chatBox.appendChild(userDiv);
+      addMessage(message, 'user');
     }
 
+    // Tampilkan file yang diunggah
     if (file) {
-      const fileDiv = document.createElement('div');
-      fileDiv.className = 'message user';
-      fileDiv.textContent = `📎 File: ${file.name}`;
-      chatBox.appendChild(fileDiv);
+      addFileMessage(file);
     }
 
     input.value = '';
     fileInput.value = '';
-    chatBox.scrollTop = chatBox.scrollHeight;
+    scrollToBottom();
 
-    const loadingDiv = document.createElement('div');
-    loadingDiv.className = 'message bot';
-    loadingDiv.innerHTML = `
-      <div class="loading">
-        <span></span><span></span><span></span>
-      </div>
-    `;
-    chatBox.appendChild(loadingDiv);
-    chatBox.scrollTop = chatBox.scrollHeight;
-
-    const formData = new FormData();
-    if (message) formData.append('message', message);
-    if (file) formData.append('file', file);
+    // Tampilkan indikator loading
+    const loadingId = showLoading();
 
     try {
-      const res = await fetch('/chat', { method: 'POST', body: formData });
-      const data = await res.json();
-      chatBox.removeChild(loadingDiv);
+      const formData = new FormData();
+      if (message) formData.append('message', message);
+      if (file) formData.append('file', file);
 
-      const botDiv = document.createElement('div');
-botDiv.className = 'message bot';
-botDiv.innerHTML = (data.reply || 'Bot tidak bisa menjawab.').replace(/\n/g, '<br>');
-chatBox.appendChild(botDiv);
-chatBox.scrollTop = chatBox.scrollHeight;
+      const response = await fetch('/chat', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Terjadi kesalahan');
+      }
+
+      const data = await response.json();
+      hideLoading(loadingId);
+      addMessage(data.reply, 'bot');
     } catch (error) {
-      chatBox.removeChild(loadingDiv);
-      const errorDiv = document.createElement('div');
-      errorDiv.className = 'message bot';
-      errorDiv.textContent = 'Terjadi kesalahan saat menghubungi bot.';
-      chatBox.appendChild(errorDiv);
+      hideLoading(loadingId);
+      addMessage(`Error: ${error.message}`, 'error');
+      console.error('Error:', error);
+    } finally {
+      // Sembunyikan keyboard di mobile setelah mengirim
+      if (window.innerWidth <= 600) {
+        document.activeElement.blur();
+      }
     }
   }
 
+  function addMessage(text, type) {
+    const chatBox = document.getElementById('chat');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${type}`;
+    
+    // Ganti newline dengan <br> dan URL dengan link
+    const formattedText = text
+      .replace(/\n/g, '<br>')
+      .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color: var(--accent);">$1</a>');
+    
+    messageDiv.innerHTML = formattedText;
+    chatBox.appendChild(messageDiv);
+    scrollToBottom();
+  }
+
+  function addFileMessage(file) {
+    const chatBox = document.getElementById('chat');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message user';
+    
+    messageDiv.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 1.2em;">📄</span>
+        <div>
+          <div style="font-weight: 500;">${file.name}</div>
+          <div style="font-size: 0.8em; opacity: 0.8;">${formatFileSize(file.size)}</div>
+        </div>
+      </div>
+    `;
+    
+    chatBox.appendChild(messageDiv);
+    scrollToBottom();
+  }
+
+  function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  function showLoading() {
+    const chatBox = document.getElementById('chat');
+    const loadingDiv = document.createElement('div');
+    const loadingId = 'loading-' + Date.now();
+    loadingDiv.id = loadingId;
+    loadingDiv.className = 'message bot';
+    loadingDiv.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 6px; padding: 5px 0;">
+        <span style="width: 8px; height: 8px; background: #888; border-radius: 50%; display: inline-block; animation: blink 1s infinite;"></span>
+        <span style="width: 8px; height: 8px; background: #888; border-radius: 50%; display: inline-block; animation: blink 1s infinite 0.2s;"></span>
+        <span style="width: 8px; height: 8px; background: #888; border-radius: 50%; display: inline-block; animation: blink 1s infinite 0.4s;"></span>
+      </div>
+    `;
+    chatBox.appendChild(loadingDiv);
+    scrollToBottom();
+    return loadingId;
+  }
+
+  function hideLoading(id) {
+    const loadingElement = document.getElementById(id);
+    if (loadingElement) {
+      loadingElement.remove();
+    }
+  }
+
+  function scrollToBottom() {
+    const chatBox = document.getElementById('chat');
+    chatBox.scrollTo({
+      top: chatBox.scrollHeight,
+      behavior: 'smooth'
+    });
+  }
+
+  // Toggle dark mode
   const toggleBtn = document.getElementById('toggle-dark');
   toggleBtn.addEventListener('click', () => {
     document.body.classList.toggle('dark');
-    toggleBtn.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
+    const isDarkMode = document.body.classList.contains('dark');
+    toggleBtn.textContent = isDarkMode ? '☀️' : '🌙';
+    localStorage.setItem('darkMode', isDarkMode);
+  });
+
+  // Fokus ke input saat halaman dimuat
+  document.getElementById('input').focus();
+
+  // Handle klik di luar input untuk sembunyikan keyboard di mobile
+  document.addEventListener('click', (e) => {
+    if (window.innerWidth <= 600 && e.target.id !== 'input') {
+      document.activeElement.blur();
+    }
+  });
+
+  // Deteksi PWA mode
+  window.addEventListener('appinstalled', () => {
+    toggleFullScreen();
+  });
+
+  // Untuk browser yang mendukung beforeinstallprompt
+  let deferredPrompt;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    // Bisa tambahkan button install disini jika mau
   });
 </script>
 </body>
